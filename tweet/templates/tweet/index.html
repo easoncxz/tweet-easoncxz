@@ -1,0 +1,24 @@
+{% comment %}
+    This file is refered to by the template loader as 'tweet:index.html'. 
+
+    Required variables:
+    - authorize_url
+{% endcomment %}
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tweet!</title>
+<link
+    rel="stylesheet"
+    href="{% static 'tweet/style.css' %}" />
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="box">
+        <p><a href="{{ authorize_url }}">Sign the fuck in</a></p>
+    </div>
+</div>
+</body>

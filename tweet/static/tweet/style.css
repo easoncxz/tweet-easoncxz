@@ -1,0 +1,11 @@
+/* This file is refered to in templates as 'static/style.css'(relative path). */
+
+div#wrapper {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+div#box {
+    top: 100px;
+    position: relative;
+}
