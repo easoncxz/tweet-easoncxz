@@ -49,7 +49,7 @@ def callback(request):
     OneAccessToken(
         access_token=at,
         access_token_secret=ats).save()
-    return HttpResponseRedirect("http://localhost:5000/home/?access_token=" + str(at))
+    return HttpResponseRedirect(reverse('tweet:home') + "?access_token=" + str(at))
 
 def home(request):
     return HttpResponse("Your access token is:<br />" + request.GET['access_token'] + "<br />But we ain't got nothing for you.")
