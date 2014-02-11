@@ -55,7 +55,10 @@ def callback(request):
         rt,
         rts,
         method='POST',
-        data={'oauth_verifier': oauth_verifier})
+        data={
+            'oauth_verifier': oauth_verifier,
+            'callback_url': 'http://tweet-easoncxz.herokuapp.com/callback',
+        })
     if len(OneAccessToken.objects.filter(access_token=at)) == 0:
         OneAccessToken(
             access_token=at,
