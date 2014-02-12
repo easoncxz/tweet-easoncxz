@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from tweet.models import OneRequestToken, OneAccessToken
+from tweet.models import AuthInfo
 
-admin.site.register(OneRequestToken)
-admin.site.register(OneAccessToken)
+admin.site.register(AuthInfo)
