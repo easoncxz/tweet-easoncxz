@@ -18,14 +18,12 @@ def index(request):
         info = AuthInfo.objects.get(request_token=request_token)
         access_token = info.access_token
         access_token_secret = info.access_token_secret
-        from pprint import pformat
         import json
         twitter = _get_twitter()
         session = twitter.get_session((access_token, access_token_secret))
         r = session.get('account/verify_credentials.json')
         j = json.loads(r.content)
-        response_text = pformat(j)
-        return HttpResponse('<pre>' + response_text + '</pre>')
+        return HttpResponse('<pre>Hello, ' + j['screen_name'] + '!</pre>')
     else:
         # user not logged in: show log in page
         context = RequestContext(
