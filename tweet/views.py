@@ -8,29 +8,26 @@ from rauth import OAuth1Service
 
 from constants import service_name, consumer_key, consumer_secret, request_token_url, access_token_url, authorize_url, base_url
 
-from tweet.models import OneRequestToken, OneAccessToken
+from tweet.models import AuthInfo
 
 def index(request):
-    if 'access_token' in request.COOKIES:
-        # Try to resume logged-in state - by showing the homepage.
-        at = request.COOKIES.get('access_token')
-        try:
-            t = OneAccessToken.objects.get(access_token=at)
-        # except non-1 number of objects returned - 
-        #   the user passed a crap cookie, or we recorded an AT twice.
-        finally:
-            pass
-        ats = t.access_token_secret
-        twitter = _get_twitter()
-        session = twitter.get_session((at, ats))
-        r = session.get('account/verify_credentials.json')
+    """Show log in page, or show home page."""
+    if 'request_token' in request.COOKIES:
+        # user already logged in: show home page
+        request_token = request.COOKIES.get('request_token')
+        info = AuthInfo.objects.get(request_token=request_token)
+        access_token = info.access_token
+        access_token_secret = info.access_token_secret
         from pprint import pformat
         import json
+        twitter = _get_twitter()
+        session = twitter.get_session((access_token, access_token_secret))
+        r = session.get('account/verify_credentials.json')
         j = json.loads(r.content)
         response_text = pformat(j)
         return HttpResponse('<pre>' + response_text + '</pre>')
     else:
-        # user not logged in.
+        # user not logged in: show log in page
         context = RequestContext(
             request,{'authorize_url': reverse('tweet:auth')})
         template = loader.get_template('tweet/index.html')
@@ -39,16 +36,12 @@ def index(request):
 def auth(request):
     """Ask Twitter for an authorization url and redirect the user there."""
     twitter = _get_twitter()
-    rt, rts = twitter.get_request_token() 
-    if len(OneRequestToken.objects.filter(request_token=rt)) == 0:
-        OneRequestToken(
-            request_token=rt,
-            request_token_secret=rts).save()
-    else:
-        t = OneRequestToken.objects.get(request_token=rt)
-        t.request_token_secret = rts
-        t.save()
-    return HttpResponseRedirect(twitter.get_authorize_url(rt))
+    request_token, request_token_secret = twitter.get_request_token() 
+    info = AuthInfo(
+        request_token=request_token,
+        request_token_secret=request_token_secret)
+    info.save()
+    return HttpResponseRedirect(twitter.get_authorize_url(request_token))
 
 def callback(request):
     """Handles control when Twitter passes it back after the user has authorized us."""
@@ -61,32 +54,25 @@ def callback(request):
 
     # get previously saved stuff
     twitter = _get_twitter()
-    t = OneRequestToken.objects.get(request_token=oauth_token)
-    rt = t.request_token
-    rts = t.request_token_secret
-    t = None
+    info = AuthInfo.objects.get(request_token=oauth_token)
+    request_token = info.request_token
+    request_token_secret = info.request_token_secret
 
     # ask twitter for the access token
-    at, ats = twitter.get_access_token(
-        rt,
-        rts,
+    info.access_token, info.access_token_secret = twitter.get_access_token(
+        request_token,
+        request_token_secret,
         method='POST',
         data={
             'oauth_verifier': oauth_verifier,
-            'callback_url': 'http://tweet-easoncxz.herokuapp.com/callback',
         })
 
-    # see if we already have the same access token
-    if len(OneAccessToken.objects.filter(access_token=at)) == 0:
-        OneAccessToken(
-            access_token=at,
-            access_token_secret=ats).save()
-    else:
-        t = OneAccessToken.objects.get(access_token=at)
-        t.access_token_secret = ats
-        t.save()
+    # save stuff
+    info.save()
+
+    # respond
     response = HttpResponseRedirect(reverse('tweet:index'))
-    response.set_cookie('access_token', at)
+    response.set_cookie('request_token', request_token)
     return response
 
 def _get_twitter():
