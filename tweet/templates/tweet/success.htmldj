@@ -1,0 +1,21 @@
+{% extends 'tweet/base.htmldj' %}
+
+{% block css_for_base %}
+div.center{
+    max-width: 400px;
+    margin: 0 auto;
+}
+div.center > * {
+    padding: 2em;
+}
+div.success {
+    background-color: hsla(92, 100%, 71%, 1);
+}
+{% endblock %}
+
+{% block body_for_base %}
+<div class="center">
+    <div class="success">Tweet success!</div>
+    <p><a href="{% url 'tweet:index' %}">Go back</a></p>
+</div>
+{% endblock %}

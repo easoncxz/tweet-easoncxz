@@ -1,0 +1,22 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tweet!</title>
+
+<link
+    rel="stylesheet"
+    href="{% static 'tweet/style.css' %}" />
+</head>
+
+<style>
+{% block css_for_base %}{% endblock %}
+</style>
+
+<script>
+{% block js_for_base %}{% endblock %}
+</script>
+
+<body>
+{% block body_for_base %}{% endblock %}
+</body>

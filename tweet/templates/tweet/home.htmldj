@@ -1,0 +1,34 @@
+{% extends 'tweet/base.htmldj' %}
+{% load static %}
+{% comment %}
+Params:
+- tweet_successful: a boolean - the last tweet successfully tweeted
+- user: a twitter.User object
+{% endcomment %}
+
+{% block css_for_base %}
+textarea {
+    width: 100%; 
+    margin: auto -1;
+}
+{% endblock %}
+
+{% block body_for_base %}
+<div id="box">
+    {% if tweet_successful %}
+    <div class="toast">
+        <p>Tweeted</p>
+    </div>
+    {% endif %}
+    <img class="avatar" src="{{ user.profile_image_url }}" alt="avatar" />
+    <div>
+        <p>{{ user.screen_name }}</p>
+        <p>{{ user.name }}</p>
+    </div>
+    <form action="{% url 'tweet:tweet' %}" method="POST">
+        {% csrf_token %}
+        <div><textarea name="tweet_content" cols="60" rows="4"></textarea></div>
+        <div><input type="submit" name="tweet" value="Tweet!" /></div>
+    </form>
+</div>
+{% endblock %}

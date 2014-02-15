@@ -1,0 +1,8 @@
+{% extends 'tweet/base.htmldj' %}
+{% load static %}
+
+{% block body_for_base %}
+<div id="box">
+    <p><a href="{% url 'tweet:auth' %}">Sign the fuck in</a></p>
+</div>
+{% endblock %}

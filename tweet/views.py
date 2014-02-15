@@ -3,6 +3,7 @@
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.template import RequestContext, loader
 from django.core.urlresolvers import reverse
+from django.shortcuts import render
 
 from rauth import OAuth1Service
 
@@ -14,21 +15,28 @@ def index(request):
     """Show log in page, or show home page."""
     if 'request_token' in request.COOKIES:
         # user already logged in: show home page
+
+        # get stuff from storage
         request_token = request.COOKIES.get('request_token')
         info = AuthInfo.objects.get(request_token=request_token)
         access_token = info.access_token
         access_token_secret = info.access_token_secret
-        import json
+
+        # ask twitter for stuff
         twitter = _get_twitter()
         session = twitter.get_session((access_token, access_token_secret))
         r = session.get('account/verify_credentials.json')
+        import json
         j = json.loads(r.content)
-        return HttpResponse('<pre>Hello, ' + j['screen_name'] + '!</pre>')
+
+        # respond to HTTP
+        template = loader.get_template('tweet/home.htmldj')
+        context = RequestContext(request, {})
+        return HttpResponse(template.render(context))
     else:
         # user not logged in: show log in page
-        context = RequestContext(
-            request,{'authorize_url': reverse('tweet:auth')})
-        template = loader.get_template('tweet/index.html')
+        context = RequestContext(request, None)
+        template = loader.get_template('tweet/login.htmldj')
         return HttpResponse(template.render(context))
 
 def auth(request):
@@ -73,12 +81,38 @@ def callback(request):
     response.set_cookie('request_token', request_token)
     return response
 
-def _get_twitter():
-    return OAuth1Service(
-        name=service_name,
+def tweet(request):
+    # extract info from request
+    request_token = request.COOKIES.get('request_token')
+    tweet_content = request.POST['tweet_content']
+
+    # read info from storage
+    info = AuthInfo.objects.get(request_token=request_token)
+    access_token = info.access_token
+    access_token_secret = info.access_token_secret
+
+    # tell twitter we're posting an update
+    import twitter
+    from constants import consumer_key, consumer_secret
+    api = twitter.Api(
         consumer_key=consumer_key,
         consumer_secret=consumer_secret,
-        request_token_url=request_token_url,
-        access_token_url=access_token_url,
-        authorize_url=authorize_url,
-        base_url=base_url)
+        access_token_key=access_token,
+        access_token_secret=access_token_secret)
+    status = api.PostUpdate(tweet_content)
+    return HttpResponseRedirect(reverse('tweet:success'))
+
+def success(request):
+    return render(request, 'tweet/success.htmldj', {})
+
+static_twitter = OAuth1Service(
+    name=service_name,
+    consumer_key=consumer_key,
+    consumer_secret=consumer_secret,
+    request_token_url=request_token_url,
+    access_token_url=access_token_url,
+    authorize_url=authorize_url,
+    base_url=base_url)
+
+def _get_twitter():
+    return static_twitter
