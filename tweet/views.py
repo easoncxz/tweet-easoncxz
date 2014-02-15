@@ -13,31 +13,51 @@ from tweet.models import AuthInfo
 
 def index(request):
     """Show log in page, or show home page."""
-    if 'request_token' in request.COOKIES:
-        # user already logged in: show home page
-
-        # get stuff from storage
-        request_token = request.COOKIES.get('request_token')
-        info = AuthInfo.objects.get(request_token=request_token)
-        access_token = info.access_token
-        access_token_secret = info.access_token_secret
-
-        # ask twitter for stuff
-        twitter = _get_twitter()
-        session = twitter.get_session((access_token, access_token_secret))
-        r = session.get('account/verify_credentials.json')
-        import json
-        j = json.loads(r.content)
-
-        # respond to HTTP
-        template = loader.get_template('tweet/home.htmldj')
-        context = RequestContext(request, {})
-        return HttpResponse(template.render(context))
-    else:
+    if 'request_token' not in request.COOKIES:
         # user not logged in: show log in page
-        context = RequestContext(request, None)
-        template = loader.get_template('tweet/login.htmldj')
-        return HttpResponse(template.render(context))
+        return login(request)
+    else:
+        # user already logged in: show home page
+        return home(request)
+
+def login(request):
+   context = RequestContext(request, None)
+   template = loader.get_template('tweet/login.htmldj')
+   return HttpResponse(template.render(context))
+
+def home(request):
+    # get stuff from storage
+    request_token = request.COOKIES.get('request_token')
+    info = AuthInfo.objects.get(request_token=request_token)
+    access_token = info.access_token
+    access_token_secret = info.access_token_secret
+
+    # ask twitter for stuff
+    #twitter = _get_twitter()
+    #session = twitter.get_session((access_token, access_token_secret))
+    #r = session.get('account/verify_credentials.json')
+    #import json
+    #j = json.loads(r.content)
+    from twitter import Api
+    from constants import consumer_key, consumer_secret
+    api = Api(
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        access_token_key=access_token,
+        access_token_secret=access_token_secret)
+    user = api.VerifyCredentials()
+    screen_name = user.GetScreenName()
+
+    # respond to HTTP
+    template = loader.get_template('tweet/home.htmldj')
+    context = RequestContext(request,
+        {
+            'user': user,
+            'profile_image_url': user.GetProfileImageUrl(),
+            'screen_name': user.GetScreenName(),
+            'name': user.GetName(),
+        })
+    return HttpResponse(template.render(context))
 
 def auth(request):
     """Ask Twitter for an authorization url and redirect the user there."""
@@ -97,9 +117,9 @@ def tweet(request):
     access_token_secret = info.access_token_secret
 
     # tell twitter we're posting an update
-    import twitter
+    from twitter import Api
     from constants import consumer_key, consumer_secret
-    api = twitter.Api(
+    api = Api(
         consumer_key=consumer_key,
         consumer_secret=consumer_secret,
         access_token_key=access_token,

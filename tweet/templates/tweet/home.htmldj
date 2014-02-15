@@ -3,7 +3,10 @@
 {% comment %}
 Params:
 - tweet_successful: a boolean - the last tweet successfully tweeted
-- user: a twitter.User object
+- profile_image_url
+- screen_name
+- name
+#- user: a twitter.User object
 {% endcomment %}
 
 {% block css_for_base %}
@@ -20,10 +23,10 @@ textarea {
         <p>Tweeted</p>
     </div>
     {% endif %}
-    <img class="avatar" src="{{ user.profile_image_url }}" alt="avatar" />
+    <img class="avatar" src="{{ profile_image_url }}" alt="avatar" />
     <div>
-        <p>{{ user.screen_name }}</p>
-        <p>{{ user.name }}</p>
+        <p>@{{ screen_name }}<br />
+        {{ name }}</p>
     </div>
     <form action="{% url 'tweet:tweet' %}" method="POST">
         {% csrf_token %}
