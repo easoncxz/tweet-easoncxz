@@ -42,7 +42,12 @@ def index(request):
 def auth(request):
     """Ask Twitter for an authorization url and redirect the user there."""
     twitter = _get_twitter()
-    request_token, request_token_secret = twitter.get_request_token() 
+    request_token, request_token_secret = twitter.get_request_token(
+        # This is in rauth/requests API format for implementing:
+        # http://oauth.net/core/1.0a/#auth_step1
+        data={
+            'oauth_callback': 'http://tweet-easoncxz.herokuapp.com/callback',
+        }) 
     info = AuthInfo(
         request_token=request_token,
         request_token_secret=request_token_secret)
